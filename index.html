@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Bone Runner | Genesis</title>
+  <meta name="description" content="Bone Runner — A Halloween-themed endless runner. Survive as long as you can!" />
+  <link rel="manifest" href="/manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#E8732A">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Inter:wght@400;600;700&display=swap"
+    rel="stylesheet">
+  <!-- Cloudflare Turnstile CAPTCHA (free, privacy-friendly) -->
+  <!-- Uncomment the line below when you have a Turnstile site key:
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  -->
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #0a0814;
+      overflow: hidden;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Mobile-only access blocker -->
+  <div id="desktop-blocker" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #0a0814; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; box-sizing: border-box;">
+    <p style="color: #E8732A; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px; letter-spacing: 2px; margin: 0 0 20px 0;">· GENESIS ·</p>
+    <p style="color: #F4F1E8; font-family: 'MedievalSharp', cursive; font-size: 24px; max-width: 600px; line-height: 1.5; margin: 0;">Bone Runner is available on mobile devices only.<br>Please open this page on your phone to play.</p>
+  </div>
+  <script>
+    function enforceMobileOnly() {
+      const isMobileUA = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const isMobileWidth = window.innerWidth <= 768;
+      const isMobile = isMobileUA && isMobileWidth;
+      
+      const blocker = document.getElementById('desktop-blocker');
+      const app = document.getElementById('app');
+      
+      if (!isMobile) {
+        blocker.style.display = 'flex';
+        app.style.display = 'none';
+      } else {
+        blocker.style.display = 'none';
+        app.style.display = 'block';
+      }
+    }
+    enforceMobileOnly();
+    window.addEventListener('resize', enforceMobileOnly);
+
+    // Basic console-access friction
+    window.addEventListener('contextmenu', function(e) {
+      e.preventDefault();
+      return false;
+    }, { capture: true });
+    
+    document.addEventListener('keydown', e => {
+      if (
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key)) ||
+        (e.ctrlKey && e.key === 'u')
+      ) {
+        e.preventDefault();
+      }
+    });
+  </script>
+
+  <div id="app">
+    <canvas id="game-canvas"></canvas>
+
+    <div id="registration-overlay" class="hidden">
+      <div class="registration-panel">
+        <p class="genesis-badge">· GENESIS ·</p>
+        <h2>Player Registration</h2>
+        <form id="registration-form">
+          <div class="form-group">
+            <label for="reg-name">Full Name</label>
+            <input type="text" id="reg-name" required placeholder="Enter your full name">
+          </div>
+          <div class="form-group">
+            <label for="reg-phone">Phone Number</label>
+            <input type="tel" id="reg-phone" required pattern="[0-9]{10}" placeholder="10-digit number"
+              title="Must be exactly 10 digits">
+          </div>
+          <div class="form-group">
+            <label for="reg-department">Department</label>
+            <select id="reg-department" required>
+              <option value="" disabled selected>Select your department</option>
+              <option value="CSE">CSE</option>
+              <option value="EC">EC</option>
+              <option value="EEE">EEE</option>
+              <option value="Mech">Mech</option>
+              <option value="Civil">Civil</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="reg-semester">Semester</label>
+            <select id="reg-semester" required>
+              <option value="" disabled selected>Select semester</option>
+              <option value="1">1st Semester</option>
+              <option value="3">3rd Semester</option>
+              <option value="5">5th Semester</option>
+              <option value="7">7th Semester</option>
+            </select>
+          </div>
+          <!-- Cloudflare Turnstile CAPTCHA (uncomment when you have a site key) -->
+          <!-- Replace YOUR_SITE_KEY with your key from https://dash.cloudflare.com/ → Turnstile -->
+          <!--
+          <div id="captcha-container" class="form-group">
+            <div class="cf-turnstile" data-sitekey="YOUR_SITE_KEY" data-theme="dark" data-size="compact"></div>
+          </div>
+          -->
+          <button type="submit" id="reg-submit">Register</button>
+          <div id="reg-error" class="hidden"></div>
+          <p id="login-toggle" class="form-toggle">Already registered? <span>Log in</span></p>
+        </form>
+
+        <!-- Login form (hidden by default) -->
+        <div id="login-form-wrapper" class="hidden">
+          <div class="form-group">
+            <label for="login-phone">Phone Number</label>
+            <input type="tel" id="login-phone" pattern="[0-9]{10}" placeholder="10-digit number"
+              title="Must be exactly 10 digits" required>
+          </div>
+          <button type="button" id="login-submit">Log In</button>
+          <div id="login-error" class="hidden"></div>
+          <p id="register-toggle" class="form-toggle hidden">New here? <span>Register</span></p>
+        </div>
+          
+        <!-- Deadline message (hidden by default) -->
+        <div id="deadline-message" class="hidden" style="text-align: center; margin-top: 20px;">
+          <h3 style="color: #E8432F; font-family: 'MedievalSharp', cursive;">Event Ended</h3>
+          <p style="color: #F4F1E8; margin-top: 10px; font-size: 15px;">Registration and gameplay are now closed.<br>Thank you for participating!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info Overlay -->
+    <div id="info-overlay" class="hidden">
+      <div class="info-panel">
+        <h2>How to Play</h2>
+        <p class="controls-text">Tap the screen or press SPACE to jump. Avoid the tombstones!</p>
+
+        <div class="warning-box">
+          <strong>Warning:</strong> Use your real name and mobile number when registering. Fake details will result in
+          immediate disqualification.
+        </div>
+        <div class="warning-box">
+          <strong>Anti-Cheat:</strong> Any attempt to manipulate, tamper with, or artificially inflate your score — including automated tools, scripts, or exploiting bugs — will result in immediate disqualification and forfeiture of any prize.
+        </div>
+
+        <h3>Prizes & Discounts</h3>
+        <ul class="prize-table">
+          <li><span>1st place:</span> 50% off (team)</li>
+          <li><span>2nd place:</span> 25% off (team)</li>
+          <li><span>3rd place:</span> 10% off (team)</li>
+        </ul>
+
+        <p class="event-link">Bone Runner is part of <a href="https://genesisfisat.vercel.app/" target="_blank"
+            rel="noopener noreferrer">Genesis 2.0</a> — check out the full event.</p>
+
+        <button type="button" id="info-close">Got it</button>
+      </div>
+    </div>
+
+    <!-- DevTools Warning Overlay -->
+    <div id="devtools-overlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(10, 8, 20, 0.95); z-index: 10000; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; box-sizing: border-box;">
+      <h2 style="color: #E8432F; font-family: 'MedievalSharp', cursive; font-size: 32px; margin-bottom: 20px;">Warning</h2>
+      <p style="color: #F4F1E8; font-family: 'Inter', sans-serif; font-size: 18px; max-width: 500px; line-height: 1.5;">Please close developer tools to continue playing.</p>
+    </div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>

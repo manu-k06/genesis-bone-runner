@@ -1,0 +1,20 @@
+{
+  "name": "genesis",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "javascript-obfuscator": "^5.5.0",
+    "supabase": "^2.111.0-beta.4",
+    "vite": "^8.1.1",
+    "vite-plugin-javascript-obfuscator": "^3.1.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.110.8"
+  }
+}
