@@ -1373,6 +1373,21 @@ canvas.addEventListener('pointerleave', () => {
   }
 });
 
+// Mobile / Touch / Mouse Input
+window.addEventListener('touchstart', (e) => {
+  if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT') {
+    e.preventDefault();
+    jump();
+  }
+}, { passive: false });
+
+window.addEventListener('mousedown', (e) => {
+  if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'SELECT') {
+    jump();
+  }
+});
+
+// Keyboard Input
 window.addEventListener('keydown', (e) => {
   if (!e.isTrusted) return;
   if (e.code === 'Space' || e.code === 'ArrowUp') {
