@@ -2219,6 +2219,13 @@ function uiRenderLoop() {
 //  INIT
 // ============================================================
 function init() {
+  // Mobile / Narrow Screen Restriction
+  if (isMobile() || window.innerWidth < 768) {
+    const desktopOverlay = document.getElementById('desktop-only-overlay');
+    if (desktopOverlay) desktopOverlay.classList.remove('hidden');
+    return; // Halt game initialization entirely
+  }
+
   resize();
   setTimeout(resize, 100);
 
