@@ -69,25 +69,6 @@ const FONT = {
   body: '"Inter", sans-serif'
 };
 
-// ============================================================
-//  EVENT DEADLINE LOGIC
-// ============================================================
-const EVENT_DEADLINE = new Date('2026-08-02T20:00:00+05:30').getTime();
-
-export function isDeadlinePassed() {
-  return Date.now() >= EVENT_DEADLINE;
-}
-
-function getCountdownText() {
-  const now = Date.now();
-  if (now >= EVENT_DEADLINE) return "Event Ended";
-  const diff = EVENT_DEADLINE - now;
-  const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-  const h = Math.floor((diff / (1000 * 60 * 60)) % 24).toString().padStart(2, '0');
-  const m = Math.floor((diff / 1000 / 60) % 60).toString().padStart(2, '0');
-  const s = Math.floor((diff / 1000) % 60).toString().padStart(2, '0');
-  return `Ends in: ${d}d ${h}h ${m}m ${s}s`;
-}
 
 // ============================================================
 //  CANVAS
@@ -800,11 +781,6 @@ function buildHomeButtons() {
     }
   });
 
-  if (isDeadlinePassed()) {
-    playBtn.state = 'disabled';
-    playBtn.text = 'Event Ended';
-    playBtn.callback = () => {};
-  }
   activeButtons.push(playBtn);
 
   activeButtons.push(new UIButton('Leaderboard', startX, startY + btnH + gap, btnW, btnH, () => {
@@ -1867,17 +1843,7 @@ function drawHomeScreen() {
   // Buttons
   for (const btn of activeButtons) btn.draw(ctx);
 
-  // Countdown Timer
-  const countdown = getCountdownText();
-  ctx.save();
-  ctx.fillStyle = isDeadlinePassed() ? THEME.mutedRed : THEME.boneWhiteMuted;
-  ctx.font = `600 18px ${FONT.body}`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.shadowColor = 'rgba(0,0,0,0.4)';
-  ctx.shadowBlur = 2;
-  ctx.fillText(countdown, cw / 2, homeLayout.countdownY);
-  ctx.restore();
+
 }
 
 // --- HUD ---
@@ -2286,7 +2252,6 @@ function init() {
   }
 
   function showLoginForm() {
-    if (isDeadlinePassed()) return;
     regForm.classList.add('hidden');
     loginFormWrapper.classList.remove('hidden');
     loginToggle.classList.add('hidden');
@@ -2295,19 +2260,11 @@ function init() {
   }
 
   function showRegForm() {
-    if (isDeadlinePassed()) return;
     loginFormWrapper.classList.add('hidden');
     regForm.classList.remove('hidden');
     registerToggle.classList.add('hidden');
     loginToggle.classList.remove('hidden');
     if (regError) { regError.classList.add('hidden'); regError.textContent = ''; }
-  }
-
-  if (isDeadlinePassed()) {
-    if (regForm) regForm.classList.add('hidden');
-    if (loginFormWrapper) loginFormWrapper.classList.add('hidden');
-    const deadlineMsg = document.getElementById('deadline-message');
-    if (deadlineMsg) deadlineMsg.classList.remove('hidden');
   }
 
   if (loginToggle) loginToggle.querySelector('span').addEventListener('click', showLoginForm);
