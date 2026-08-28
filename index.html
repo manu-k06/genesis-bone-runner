@@ -29,35 +29,6 @@
 </head>
 
 <body>
-  <!-- Mobile-only access blocker -->
-  <div id="desktop-blocker"
-    style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #0a0814; z-index: 9999; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 20px; box-sizing: border-box;">
-    <p
-      style="color: #E8732A; font-family: 'Inter', sans-serif; font-weight: 600; font-size: 14px; letter-spacing: 2px; margin: 0 0 20px 0;">
-      · GENESIS ·</p>
-    <p
-      style="color: #F4F1E8; font-family: 'MedievalSharp', cursive; font-size: 24px; max-width: 600px; line-height: 1.5; margin: 0;">
-      Bone Runner is available on mobile devices only.<br>Please open this page on your phone to play.</p>
-  </div>
-  <script>
-    function enforceMobileOnly() {
-      const isMobileUA = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      const isMobileWidth = window.innerWidth <= 768;
-      const isMobile = isMobileUA && isMobileWidth;
-
-      const blocker = document.getElementById('desktop-blocker');
-      const app = document.getElementById('app');
-
-      if (!isMobile) {
-        blocker.style.display = 'flex';
-        app.style.display = 'none';
-      } else {
-        blocker.style.display = 'none';
-        app.style.display = 'block';
-      }
-    }
-    document.addEventListener('DOMContentLoaded', enforceMobileOnly);
-    window.addEventListener('resize', enforceMobileOnly);
 
     // Basic console-access friction
     window.addEventListener('contextmenu', function (e) {
