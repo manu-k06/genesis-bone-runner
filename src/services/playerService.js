@@ -7,27 +7,31 @@ export async function registerPlayer({ username, email, password }) {
   const { data: authData, error: authError } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      data: {
+        username: username
+      }
+    }
   });
 
   if (authError) throw authError;
   
   if (!authData.user) throw new Error("Signup failed. Please try again.");
 
-  // 2. Insert into live_players table
-  const { data: playerData, error: dbError } = await supabase
-    .from('live_players')
-    .insert([{ id: authData.user.id, username }])
-    .select()
-    .single();
-
-  if (dbError) throw dbError;
+  // The Postgres trigger 'on_auth_user_created' will automatically insert 
+  // the row into live_players using the username we passed in raw_user_meta_data.
 
   // Reset Turnstile widget if present
   if (typeof turnstile !== 'undefined') {
     try { turnstile.reset(); } catch (_) {}
   }
 
-  return { id: playerData.id, name: playerData.username };
+  // If email confirmation is enabled, session will be null.
+  if (!authData.session) {
+    throw new Error("Registration successful! Please check your email to confirm your account before logging in.");
+  }
+
+  return { id: authData.user.id, name: username };
 }
 
 export async function loginPlayer({ email, password }) {
