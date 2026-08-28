@@ -51,7 +51,7 @@
         app.style.display = 'block';
       }
     }
-    enforceMobileOnly();
+    document.addEventListener('DOMContentLoaded', enforceMobileOnly);
     window.addEventListener('resize', enforceMobileOnly);
 
     // Basic console-access friction

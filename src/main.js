@@ -337,7 +337,7 @@ const config = {
   groundHeight: 50,
   speed: 400
 };
-Object.freeze(config);
+// Object.freeze(config); // Removed because groundHeight must be mutable
 
 // ============================================================
 //  PLAYER
