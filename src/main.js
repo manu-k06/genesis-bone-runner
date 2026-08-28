@@ -2,6 +2,7 @@ import './style.css';
 import { supabase } from './supabase.js';
 import { registerPlayer, loginPlayer, getCurrentPlayer } from './services/playerService.js';
 import { getTopPlayers, getPlayerRank } from './services/leaderboardService.js';
+import { getGameConfig } from './services/configService.js';
 
 // ============================================================
 //  STATE MANAGEMENT
@@ -77,6 +78,13 @@ const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
 
 // ============================================================
+//  ASSET CONFIGURATION
+// ============================================================
+const ASSET_BASE_URL = import.meta.env.VITE_SUPABASE_URL 
+  ? `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/game-assets` 
+  : '';
+
+// ============================================================
 //  AUDIO
 // ============================================================
 function registerAudioAsset(audio) {
@@ -99,11 +107,11 @@ function registerAudioAsset(audio) {
   audio.load();
 }
 
-const jumpSound = new Audio('/sounds/jump.mp3');
+const jumpSound = new Audio(`${ASSET_BASE_URL}/sounds/jump.mp3`);
 jumpSound.volume = 1.0;
 registerAudioAsset(jumpSound);
 
-const bgMusic = new Audio('/sounds/bg.mp3');
+const bgMusic = new Audio(`${ASSET_BASE_URL}/sounds/bg.mp3`);
 bgMusic.volume = 0.6; // 60% default volume
 bgMusic.loop = true;
 registerAudioAsset(bgMusic);
@@ -216,7 +224,7 @@ const spriteConfig = {
   dying: { name: 'Dying', frames: 15, speed: 15 }
 };
 
-const basePath = '/Characters/Forest_Ranger_1/PNG/PNG Sequences';
+const basePath = `${ASSET_BASE_URL}/Characters/Forest_Ranger_1/PNG/PNG Sequences`;
 for (const [key, anim] of Object.entries(spriteConfig)) {
   for (let i = 0; i < anim.frames; i++) {
     const img = new Image();
@@ -242,27 +250,27 @@ for (const [key, anim] of Object.entries(spriteConfig)) {
 const villainTypes = ['minotaur', 'reaper', 'shadow', 'skeleton', 'zombie'];
 const villainSpriteConfig = {
   minotaur: {
-    basePath: '/Characters/Minotaur_1/PNG/PNG Sequences/Running',
+    basePath: `${ASSET_BASE_URL}/Characters/Minotaur_1/PNG/PNG Sequences/Running`,
     prefix: '0_Minotaur_Running',
     frames: 12
   },
   reaper: {
-    basePath: '/Characters/Reaper_Man_1/PNG/PNG Sequences/Running',
+    basePath: `${ASSET_BASE_URL}/Characters/Reaper_Man_1/PNG/PNG Sequences/Running`,
     prefix: '0_Reaper_Man_Running',
     frames: 12
   },
   shadow: {
-    basePath: '/Characters/Necromancer_of_the_Shadow_1/PNG/PNG Sequences/Running',
+    basePath: `${ASSET_BASE_URL}/Characters/Necromancer_of_the_Shadow_1/PNG/PNG Sequences/Running`,
     prefix: '0_Necromancer_of_the_Shadow_Running',
     frames: 12
   },
   skeleton: {
-    basePath: '/Characters/Skeleton_Warrior_1/PNG/PNG Sequences/Running',
+    basePath: `${ASSET_BASE_URL}/Characters/Skeleton_Warrior_1/PNG/PNG Sequences/Running`,
     prefix: '0_Skeleton_Warrior_Running',
     frames: 12
   },
   zombie: {
-    basePath: '/Characters/Zombie_Villager_1/PNG/PNG Sequences/Running',
+    basePath: `${ASSET_BASE_URL}/Characters/Zombie_Villager_1/PNG/PNG Sequences/Running`,
     prefix: '0_Zombie_Villager_Running',
     frames: 12
   }
@@ -296,7 +304,7 @@ for (const type of villainTypes) {
 // ============================================================
 const staticBg = new Image();
 assetsTotal++;
-staticBg.src = encodeURI('/PNG/4/dead forest.png');
+staticBg.src = encodeURI(`${ASSET_BASE_URL}/PNG/4/dead forest.png`);
 staticBg.onload = () => { bgCacheDirty = true; assetsLoaded++; };
 staticBg.onerror = () => {
   console.error('Failed to load image asset:', staticBg.src);
@@ -306,7 +314,7 @@ staticBg.onerror = () => {
 
 const fhcLogo = new Image();
 assetsTotal++;
-fhcLogo.src = '/fhc.png';
+fhcLogo.src = `${ASSET_BASE_URL}/fhc.png`;
 fhcLogo.onload = () => { assetsLoaded++; };
 fhcLogo.onerror = () => { console.error('Failed to load fhc logo'); assetsLoaded++; };
 let bgDrawData = { drawWidth: 0, drawHeight: 0, dx: 0, dy: 0, scale: 1 };
@@ -331,7 +339,7 @@ function rebuildBgCache() {
 // ============================================================
 //  GAME CONFIG
 // ============================================================
-const config = {
+let config = {
   gravity: 1500,
   jumpVelocity: -700,
   groundHeight: 50,
@@ -358,7 +366,7 @@ const player = {
 //  OBSTACLES
 // ============================================================
 let obstacles = [];
-const obstacleConfig = {
+let obstacleConfig = {
   spawnIntervalMin: 1000,
   spawnIntervalMax: 2000,
   timeSinceLastSpawn: 0,
@@ -2174,6 +2182,22 @@ function uiRenderLoop() {
 function init() {
   resize();
   setTimeout(resize, 100);
+
+  // Fetch remote config
+  getGameConfig().then(remoteConfig => {
+    if (remoteConfig) {
+      Object.assign(config, {
+        gravity: remoteConfig.gravity,
+        jumpVelocity: remoteConfig.jump_velocity,
+        speed: remoteConfig.speed
+      });
+      Object.assign(obstacleConfig, {
+        spawnIntervalMin: remoteConfig.spawn_interval_min,
+        spawnIntervalMax: remoteConfig.spawn_interval_max
+      });
+    }
+  });
+
   // Auto-login if session exists
   getCurrentPlayer().then(player => {
     if (player) {
