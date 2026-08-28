@@ -20,7 +20,7 @@ export default defineConfig({
         log: false,
         numbersToExpressions: true,
         renameGlobals: false,
-        selfDefending: true,            // Crashes if code is formatted/beautified
+        selfDefending: false,            // Crashes if code is formatted/beautified
         simplify: true,
         splitStrings: true,
         splitStringsChunkLength: 10,
