@@ -1976,7 +1976,7 @@ function drawLeaderboardScreen() {
         const y = startY + (idx * rowH);
 
         // Highlight current player
-        if ((p.id && p.id === currentPlayerId) || (p.name && p.name === currentPlayerName)) {
+        if ((p.id && p.id === currentPlayerId) || ((p.name || p.username) === currentPlayerName)) {
           drawRoundedRect(ctx, px + 10, y - rowH / 2 - 4, pw - 20, rowH, 6, 'rgba(143, 209, 79, 0.13)');
         }
 
@@ -1987,7 +1987,7 @@ function drawLeaderboardScreen() {
         else ctx.fillStyle = THEME.boneWhite;
 
         ctx.font = `600 14px ${FONT.body}`;
-        ctx.fillText(`#${idx + 1}  ${p.name}`, px + 35, y);
+        ctx.fillText(`#${idx + 1}  ${p.name || p.username}`, px + 35, y);
 
         ctx.textAlign = 'right';
         ctx.fillText(p.high_score.toString(), px + pw - 35, y);
