@@ -1,53 +1,71 @@
 import { supabase } from '../supabase.js';
 
-const EVENT_DEADLINE = new Date('2026-08-02T20:00:00+05:30').getTime();
-
-export async function registerPlayer(playerData) {
-  if (Date.now() >= EVENT_DEADLINE) throw new Error("Event has ended. Registration is closed.");
+export async function registerPlayer({ username, email, password }) {
   if (!supabase) return null;
 
-  // Get the Turnstile CAPTCHA token (if widget is active)
-  let captchaToken = null;
-  const turnstileResponse = document.querySelector('[name="cf-turnstile-response"]');
-  if (turnstileResponse && turnstileResponse.value) {
-    captchaToken = turnstileResponse.value;
-  }
-
-  // Use the Edge Function for registration (handles CAPTCHA validation server-side)
-  const { data, error } = await supabase.functions.invoke('register-player', {
-    body: {
-      name: playerData.name,
-      phone: playerData.phone,
-      department: playerData.department,
-      semester: playerData.semester,
-      captchaToken: captchaToken
-    }
+  // 1. Sign up with Supabase Auth
+  const { data: authData, error: authError } = await supabase.auth.signUp({
+    email,
+    password,
   });
 
-  if (error) {
-    throw error;
-  }
+  if (authError) throw authError;
+  
+  if (!authData.user) throw new Error("Signup failed. Please try again.");
 
-  // Reset Turnstile widget for next attempt
+  // 2. Insert into live_players table
+  const { data: playerData, error: dbError } = await supabase
+    .from('live_players')
+    .insert([{ id: authData.user.id, username }])
+    .select()
+    .single();
+
+  if (dbError) throw dbError;
+
+  // Reset Turnstile widget if present
   if (typeof turnstile !== 'undefined') {
     try { turnstile.reset(); } catch (_) {}
   }
 
-  return data;
+  return { id: playerData.id, name: playerData.username };
 }
 
-export async function lookupPlayerByPhone(phone) {
-  if (!supabase || !phone) return null;
+export async function loginPlayer({ email, password }) {
+  if (!supabase) return null;
 
-  // Use server-side RPC function for phone lookup
-  const { data, error } = await supabase.rpc('lookup_player_by_phone', {
-    p_phone: phone
+  // 1. Login with Supabase Auth
+  const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+    email,
+    password
   });
 
-  if (error || !data) return null;
-  return data;
+  if (authError) throw authError;
+
+  if (!authData.user) throw new Error("Login failed.");
+
+  // 2. Fetch from live_players table
+  const { data: playerData, error: dbError } = await supabase
+    .from('live_players')
+    .select('id, username')
+    .eq('id', authData.user.id)
+    .single();
+
+  if (dbError) throw dbError;
+
+  return { id: playerData.id, name: playerData.username };
 }
 
-// REMOVED: updatePlayerStats()
-// Score updates are now handled exclusively by the server-side
-// end_game_session RPC function.
+export async function getCurrentPlayer() {
+  if (!supabase) return null;
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return null;
+
+  const { data: playerData } = await supabase
+    .from('live_players')
+    .select('id, username')
+    .eq('id', session.user.id)
+    .single();
+    
+  if (!playerData) return null;
+  return { id: playerData.id, name: playerData.username };
+}

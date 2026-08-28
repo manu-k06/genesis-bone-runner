@@ -76,39 +76,19 @@
 
     <div id="registration-overlay" class="hidden">
       <div class="registration-panel">
-        <p class="genesis-badge">· GENESIS ·</p>
         <h2>Player Registration</h2>
         <form id="registration-form">
           <div class="form-group">
-            <label for="reg-name">Full Name</label>
-            <input type="text" id="reg-name" required placeholder="Enter your full name">
+            <label for="reg-email">Email Address</label>
+            <input type="email" id="reg-email" required placeholder="Enter your email">
           </div>
           <div class="form-group">
-            <label for="reg-phone">Phone Number</label>
-            <input type="tel" id="reg-phone" required pattern="[0-9]{10}" placeholder="10-digit number"
-              title="Must be exactly 10 digits">
+            <label for="reg-name">Username</label>
+            <input type="text" id="reg-name" required placeholder="Choose a username" pattern="[a-zA-Z0-9_]+" title="Only letters, numbers, and underscores">
           </div>
           <div class="form-group">
-            <label for="reg-department">Department</label>
-            <select id="reg-department" required>
-              <option value="" disabled selected>Select your department</option>
-              <option value="CSE">CSE</option>
-              <option value="EC">EC</option>
-              <option value="EEE">EEE</option>
-              <option value="Mech">Mech</option>
-              <option value="Civil">Civil</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="reg-semester">Semester</label>
-            <select id="reg-semester" required>
-              <option value="" disabled selected>Select semester</option>
-              <option value="1">1st Semester</option>
-              <option value="3">3rd Semester</option>
-              <option value="5">5th Semester</option>
-              <option value="7">7th Semester</option>
-            </select>
+            <label for="reg-password">Password</label>
+            <input type="password" id="reg-password" required placeholder="Create a password" minlength="6">
           </div>
           <!-- Cloudflare Turnstile CAPTCHA (uncomment when you have a site key) -->
           <!-- Replace YOUR_SITE_KEY with your key from https://dash.cloudflare.com/ → Turnstile -->
@@ -125,9 +105,12 @@
         <!-- Login form (hidden by default) -->
         <div id="login-form-wrapper" class="hidden">
           <div class="form-group">
-            <label for="login-phone">Phone Number</label>
-            <input type="tel" id="login-phone" pattern="[0-9]{10}" placeholder="10-digit number"
-              title="Must be exactly 10 digits" required>
+            <label for="login-email">Email Address</label>
+            <input type="email" id="login-email" placeholder="Enter your email" required>
+          </div>
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" placeholder="Enter your password" required>
           </div>
           <button type="button" id="login-submit">Log In</button>
           <div id="login-error" class="hidden"></div>
@@ -145,22 +128,8 @@
         <p class="controls-text">Tap the screen or press SPACE to jump. Avoid the tombstones!</p>
 
         <div class="warning-box">
-          <strong>Warning:</strong> Use your real name and mobile number when registering. Fake details will result in
-          immediate disqualification.
+          <strong>Fair Play:</strong> Any attempt to manipulate, tamper with, or artificially inflate your score — including automated tools, scripts, or exploiting bugs — will result in a ban from the global leaderboards.
         </div>
-        <div class="warning-box">
-          <strong>Anti-Cheat:</strong> Any attempt to manipulate, tamper with, or artificially inflate your score — including automated tools, scripts, or exploiting bugs — will result in immediate disqualification and forfeiture of any prize.
-        </div>
-
-        <h3>Prizes & Discounts</h3>
-        <ul class="prize-table">
-          <li><span>1st place:</span> 50% off (team)</li>
-          <li><span>2nd place:</span> 25% off (team)</li>
-          <li><span>3rd place:</span> 10% off (team)</li>
-        </ul>
-
-        <p class="event-link">Bone Runner is part of <a href="https://genesisfisat.vercel.app/" target="_blank"
-            rel="noopener noreferrer">Genesis 2.0</a> — check out the full event.</p>
 
         <button type="button" id="info-close">Got it</button>
       </div>

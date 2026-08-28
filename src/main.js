@@ -1,6 +1,6 @@
 import './style.css';
-import { supabase, initAnonymousAuth } from './supabase.js';
-import { registerPlayer, lookupPlayerByPhone } from './services/playerService.js';
+import { supabase } from './supabase.js';
+import { registerPlayer, loginPlayer, getCurrentPlayer } from './services/playerService.js';
 import { getTopPlayers, getPlayerRank } from './services/leaderboardService.js';
 
 // ============================================================
@@ -689,8 +689,9 @@ function buildHomeButtons() {
   activeButtons.push(new UIButton('Log Out', cw - (fsSize * 2) - (fsMargin * 3) - 85, fsMargin, 85, fsSize, () => {
     playSfx(jumpSound);
     if (confirm('Are you sure you want to log out?')) {
-      localStorage.removeItem('bonerunner_player_id');
-      localStorage.removeItem('bonerunner_player_name');
+      localStorage.removeItem('bonerunner_live_player_id');
+      localStorage.removeItem('bonerunner_live_player_name');
+
       score = 0;
       switchState(STATES.REGISTER);
     }
@@ -707,7 +708,7 @@ function buildHomeButtons() {
   const gap = 14;
 
   // --- Dynamic Centering Layout ---
-  const playerName = localStorage.getItem('bonerunner_player_name');
+  const playerName = localStorage.getItem('bonerunner_live_player_name');
   
   // Calculate relative heights assuming title is at 0
   let currentY = 0;
@@ -1046,18 +1047,12 @@ async function switchState(newState) {
         try {
           const endParams = {
             p_session_id: currentSessionId,
-            p_client_score: Math.floor(score),
-            p_jumps_made: sessionStats.jumps,
-            p_obstacles_dodged: sessionStats.dodges
+            p_score: Math.floor(score),
+            p_elapsed_seconds: Math.floor((performance.now() - lastTime) / 1000)
           };
-          // Include nonce if available (anti-replay)
-          if (currentSessionNonce) {
-            endParams.p_nonce = currentSessionNonce;
-          }
-          const { data: serverScore, error: endError } = await supabase.rpc('end_game_session', endParams);
-          if (!endError && serverScore !== null && serverScore !== undefined) {
-            // Use the server-authoritative score instead of client score
-            score = serverScore;
+          const { data: serverResult, error: endError } = await supabase.rpc('end_live_game_session', endParams);
+          if (!endError && serverResult && serverResult.score !== undefined) {
+            score = serverResult.score;
           }
         } catch (_) {
           // Score submission failed — client score stands for display only
@@ -1074,7 +1069,7 @@ async function switchState(newState) {
       leaderboardLoading = true;
       leaderboardData = null;
       playerRankData = null;
-      const playerId = localStorage.getItem('bonerunner_player_id');
+      const playerId = localStorage.getItem('bonerunner_live_player_id');
       Promise.all([
         getTopPlayers(),
         getPlayerRank(playerId)
@@ -1455,21 +1450,13 @@ async function resetGame() {
   lastTime = performance.now();
   sessionStats = { jumps: 0, dodges: 0 };
 
-  const { data: sessionData, error: startError } = await supabase.rpc('start_game_session', {
-    p_player_id: localStorage.getItem('bonerunner_player_id')
+  const { data: sessionData, error: startError } = await supabase.rpc('start_live_game_session', {
+    p_player_id: localStorage.getItem('bonerunner_live_player_id')
   });
   if (startError) {
     // Session start failed — game will run locally without score tracking
   } else {
-    // start_game_session now returns JSON: { session_id, nonce }
-    if (sessionData && typeof sessionData === 'object') {
-      currentSessionId = sessionData.session_id;
-      currentSessionNonce = sessionData.nonce;
-    } else {
-      // Fallback for old function signature (returns UUID directly)
-      currentSessionId = sessionData;
-      currentSessionNonce = null;
-    }
+    currentSessionId = sessionData;
     if (heartbeatInterval) clearInterval(heartbeatInterval);
     heartbeatInterval = setInterval(async () => {
       if (currentSessionId) {
@@ -1827,7 +1814,7 @@ function drawHomeScreen() {
   ctx.restore();
 
   // Welcome message
-  const playerName = localStorage.getItem('bonerunner_player_name');
+  const playerName = localStorage.getItem('bonerunner_live_player_name');
   if (playerName) {
     ctx.save();
     ctx.fillStyle = THEME.boneWhiteMuted;
@@ -1972,8 +1959,8 @@ function drawLeaderboardScreen() {
       ctx.clip();
 
       const startY = rowAreaTop + topPadding - leaderboardScrollY;
-      const currentPlayerId = localStorage.getItem('bonerunner_player_id');
-      const currentPlayerName = localStorage.getItem('bonerunner_player_name');
+      const currentPlayerId = localStorage.getItem('bonerunner_live_player_id');
+      const currentPlayerName = localStorage.getItem('bonerunner_live_player_name');
 
       ctx.textAlign = 'left';
 
@@ -2121,7 +2108,7 @@ function drawFrame() {
       ctx.fillText(`${Math.floor(progress * 100)}%`, cx, y + h + 30);
       
       if (assetsLoaded >= assetsTotal && assetsTotal > 0) {
-        if (!localStorage.getItem('bonerunner_player_id')) {
+        if (!localStorage.getItem('bonerunner_live_player_id')) {
           switchState(STATES.REGISTER);
         } else {
           switchState(STATES.HOME);
@@ -2187,9 +2174,14 @@ function uiRenderLoop() {
 function init() {
   resize();
   setTimeout(resize, 100);
-
-  // Initialize anonymous auth (binds browser to cryptographic identity)
-  initAnonymousAuth();
+  // Auto-login if session exists
+  getCurrentPlayer().then(player => {
+    if (player) {
+      localStorage.setItem('bonerunner_live_player_id', player.id);
+      localStorage.setItem('bonerunner_live_player_name', player.name);
+      switchState(STATES.HOME);
+    }
+  }).catch(console.error);
 
   // Registration form setup
   const regForm = document.getElementById('registration-form');
@@ -2211,23 +2203,22 @@ function init() {
 
       try {
         const data = {
-          name: document.getElementById('reg-name').value.trim(),
-          phone: document.getElementById('reg-phone').value.trim(),
-          department: document.getElementById('reg-department').value,
-          semester: document.getElementById('reg-semester').value
+          email: document.getElementById('reg-email').value.trim(),
+          username: document.getElementById('reg-name').value.trim(),
+          password: document.getElementById('reg-password').value
         };
 
         const result = await registerPlayer(data);
         if (result && result.id) {
-          localStorage.setItem('bonerunner_player_id', result.id);
-          localStorage.setItem('bonerunner_player_name', data.name);
+          localStorage.setItem('bonerunner_live_player_id', result.id);
+          localStorage.setItem('bonerunner_live_player_name', result.name);
           regForm.reset();
           switchState(STATES.HOME);
         }
       } catch (err) {
         console.error(err);
         if (regError) {
-          regError.textContent = 'Registration failed. Phone number may already be in use.';
+          regError.textContent = err.message || 'Registration failed. Email or Username may already be in use.';
           regError.classList.remove('hidden');
         }
       } finally {
@@ -2272,25 +2263,26 @@ function init() {
 
   if (loginSubmit) {
     loginSubmit.addEventListener('click', async () => {
-      const phone = document.getElementById('login-phone').value.trim();
-      if (!phone || phone.length !== 10) {
-        if (loginError) { loginError.textContent = 'Please enter a valid 10-digit phone number.'; loginError.classList.remove('hidden'); }
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      if (!email || !password) {
+        if (loginError) { loginError.textContent = 'Please enter both email and password.'; loginError.classList.remove('hidden'); }
         return;
       }
       loginSubmit.disabled = true;
-      loginSubmit.textContent = 'Looking up...';
+      loginSubmit.textContent = 'Logging in...';
       if (loginError) loginError.classList.add('hidden');
       try {
-        const player = await lookupPlayerByPhone(phone);
+        const player = await loginPlayer({ email, password });
         if (player && player.id) {
-          localStorage.setItem('bonerunner_player_id', player.id);
-          localStorage.setItem('bonerunner_player_name', player.name);
+          localStorage.setItem('bonerunner_live_player_id', player.id);
+          localStorage.setItem('bonerunner_live_player_name', player.name);
           switchState(STATES.HOME);
         } else {
-          if (loginError) { loginError.textContent = 'No registration found with this phone number.'; loginError.classList.remove('hidden'); }
+          if (loginError) { loginError.textContent = 'Login failed. Invalid credentials.'; loginError.classList.remove('hidden'); }
         }
       } catch (err) {
-        if (loginError) { loginError.textContent = 'Login failed. Please try again.'; loginError.classList.remove('hidden'); }
+        if (loginError) { loginError.textContent = err.message || 'Login failed. Please try again.'; loginError.classList.remove('hidden'); }
       } finally {
         loginSubmit.disabled = false;
         loginSubmit.textContent = 'Log In';
