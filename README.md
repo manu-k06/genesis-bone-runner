@@ -181,6 +181,8 @@ To set up the Supabase database schema and RPCs, execute the migrations located 
 2. **`006_live_players.sql`**: Production live tables (`live_players`, `live_game_sessions`), Row Level Security policies, and game session RPCs (`start_live_game_session`, `end_live_game_session`, `get_live_leaderboard`, `get_live_player_rank`).
 3. **`007_remote_config.sql`**: `live_game_config` table for dynamic physics tuning.
 4. **`008_auth_trigger.sql`**: PostgreSQL trigger to create user profiles in `live_players` upon Supabase Auth sign-up.
+5. **`009_fix_permissions.sql`**: Grants table privileges to `anon` and `authenticated` roles, handles profile backfilling, and adds robust conflict handling.
+
 
 ### Deploying Edge Functions (Optional)
 

@@ -202,3 +202,14 @@ BEGIN
   );
 END;
 $$;
+
+-- 10. Table Privileges & Grants
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT SELECT ON TABLE live_players TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE live_players TO authenticated;
+GRANT ALL ON TABLE live_players TO service_role;
+
+GRANT SELECT ON TABLE live_game_sessions TO anon;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE live_game_sessions TO authenticated;
+GRANT ALL ON TABLE live_game_sessions TO service_role;
+

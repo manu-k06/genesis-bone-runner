@@ -34,3 +34,8 @@ CREATE POLICY "live_game_config_update_all"
 ON live_game_config FOR UPDATE
 TO authenticated
 USING (true);
+
+-- Table Privileges & Grants
+GRANT SELECT ON TABLE live_game_config TO anon, authenticated;
+GRANT ALL ON TABLE live_game_config TO service_role;
+
